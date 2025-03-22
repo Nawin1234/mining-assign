@@ -1,0 +1,7 @@
+streamlit
+pandas
+matplotlib
+seaborn
+numpy
+scikit-learn  # (if using ML models)
+plotly  # (optional, for interactive visualizations)
