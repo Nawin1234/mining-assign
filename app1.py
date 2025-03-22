@@ -6,7 +6,9 @@ import seaborn as sns
 # Load dataset
 @st.cache_data
 def load_data():
-    file_path = "delivery_data.csv"  # Ensure this file is uploaded in GitHub
+    file_path = "./delivery_data.csv"  # Ensure correct path
+
+   # Ensure this file is uploaded in GitHub
 
     try:
         df = pd.read_csv(file_path)
