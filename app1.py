@@ -1,14 +1,12 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Load dataset
 @st.cache_data
 def load_data():
-    file_path = "./delivery_data.csv"  # Ensure correct path
-
-   # Ensure this file is uploaded in GitHub
+    file_path = "delivery_data.csv"  # Ensure this file is uploaded in GitHub
 
     try:
         df = pd.read_csv(file_path)
@@ -24,38 +22,66 @@ df = load_data()
 if df is None:
     st.stop()
 
-# Streamlit UI
-st.title("📦 Amazon-Style Delivery Analytics")
+# Set page title and icon
+st.set_page_config(page_title="Delivery Data Analysis", page_icon="🚚")
 
-# Sidebar filters
-st.sidebar.header("Filter Options")
-city = st.sidebar.selectbox("Select City", ["All"] + list(df["City"].unique()))
-vehicle = st.sidebar.selectbox("Select Vehicle Type", ["All"] + list(df["Type_of_vehicle"].unique()))
+# Sidebar for user input
+st.sidebar.title("Filter Delivery Data")
 
-# Apply filters
-if city != "All":
-    df = df[df["City"] == city]
-if vehicle != "All":
-    df = df[df["Type_of_vehicle"] == vehicle]
+# Filter for order date
+selected_date = st.sidebar.selectbox("Select Order Date", options=df["Order_Date"].unique())
 
-# Show Data
-st.subheader("📊 Data Preview")
-st.dataframe(df.head())
+# Slider for minimum delivery time
+min_delivery_time = st.sidebar.slider("Minimum Delivery Time (mins)", 
+                                      min_value=int(df["Time_taken(min)"].min()), 
+                                      max_value=int(df["Time_taken(min)"].max()), 
+                                      value=int(df["Time_taken(min)"].median()))
 
-# Visualization - Delivery Time Distribution
-st.subheader("⏳ Delivery Time Analysis")
-fig, ax = plt.subplots()
-sns.histplot(df["Time_taken(min)"], bins=20, kde=True, ax=ax)
-st.pyplot(fig)
+# Multi-select for traffic density
+selected_traffic = st.sidebar.multiselect("Select Traffic Density", 
+                                          options=df["Road_traffic_density"].unique(), 
+                                          default=df["Road_traffic_density"].unique())
 
-st.subheader("🚦 Traffic Density Impact")
-traffic_group = df.groupby("Road_traffic_density")["Time_taken(min)"].mean()
-st.bar_chart(traffic_group)
+# Filter data based on user input
+filtered_data = df[(df["Order_Date"] == selected_date) & 
+                   (df["Time_taken(min)"] >= min_delivery_time) & 
+                   (df["Road_traffic_density"].isin(selected_traffic))]
 
-st.subheader("🌦️ Weather Impact on Delivery Time")
-weather_group = df.groupby("Weatherconditions")["Time_taken(min)"].mean()
-st.bar_chart(weather_group)
+# Limit number of records displayed
+num_records = st.sidebar.slider("Number of Records to Display", min_value=1, max_value=50, value=10)
+filtered_data = filtered_data.head(num_records)
 
-st.write("📊 Use the sidebar to filter data dynamically!")
+# Main title
+st.title("🚚 Delivery Data Analysis App")
+
+# Display filtered results
+st.write(f"**Filtered Results for Date {selected_date} with Min Delivery Time {min_delivery_time} mins:**")
+st.dataframe(filtered_data)
+
+# Create tabs for different visualizations
+tabs = st.tabs(["Delivery Time Distribution", "Traffic Impact on Delivery"])
+
+with tabs[0]:
+    st.subheader("📊 Delivery Time Distribution")
+    fig, ax = plt.subplots()
+    ax.hist(filtered_data["Time_taken(min)"], bins=10, color='blue', alpha=0.7)
+    ax.set_xlabel("Time Taken (mins)")
+    ax.set_ylabel("Number of Deliveries")
+    ax.set_title("Distribution of Delivery Time")
+    st.pyplot(fig)
+
+with tabs[1]:
+    st.subheader("🚦 Traffic Density vs Delivery Time")
+    traffic_summary = filtered_data.groupby("Road_traffic_density")["Time_taken(min)"].mean().reset_index()
+    fig2, ax2 = plt.subplots()
+    ax2.bar(traffic_summary["Road_traffic_density"], traffic_summary["Time_taken(min)"], color='red')
+    ax2.set_xlabel("Traffic Density")
+    ax2.set_ylabel("Avg. Delivery Time (mins)")
+    ax2.set_title("Impact of Traffic on Delivery Time")
+    st.pyplot(fig2)
+
+# Footer
+st.write("🚀 Analyzing delivery data made easy!")
+
 
 
