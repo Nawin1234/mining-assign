@@ -3,20 +3,31 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# File Path (Ensure the file is in the same folder as this script)
+file_path = "delivery_data.csv"  
+
 # Load dataset
 @st.cache_data
 def load_data():
-    df = pd.read_csv("data/delivery_data.csv")  # Replace with actual file path
-    df["Time_taken(min)"] = df["Time_taken(min)"].str.extract("(\d+)").astype(float)  # Clean data
-    return df
+    try:
+        df = pd.read_csv(file_path)
+        df["Time_taken(min)"] = df["Time_taken(min)"].str.extract("(\d+)").astype(float)  # Clean data
+        return df
+    except FileNotFoundError:
+        st.error("⚠️ File not found! Please make sure 'delivery_data.csv' is in the same folder as this script.")
+        return None
 
 df = load_data()
 
-# Streamlit App Layout
+# Stop execution if file is missing
+if df is None:
+    st.stop()
+
+# Streamlit UI
 st.title("📦 Amazon-Style Delivery Analytics")
-st.sidebar.header("Filter Options")
 
 # Sidebar filters
+st.sidebar.header("Filter Options")
 city = st.sidebar.selectbox("Select City", ["All"] + list(df["City"].unique()))
 vehicle = st.sidebar.selectbox("Select Vehicle Type", ["All"] + list(df["Type_of_vehicle"].unique()))
 
@@ -27,6 +38,7 @@ if vehicle != "All":
     df = df[df["Type_of_vehicle"] == vehicle]
 
 # Show Data
+st.subheader("📊 Data Preview")
 st.dataframe(df.head())
 
 # Visualization - Delivery Time Distribution
@@ -35,7 +47,6 @@ fig, ax = plt.subplots()
 sns.histplot(df["Time_taken(min)"], bins=20, kde=True, ax=ax)
 st.pyplot(fig)
 
-# Additional Insights
 st.subheader("🚦 Traffic Density Impact")
 traffic_group = df.groupby("Road_traffic_density")["Time_taken(min)"].mean()
 st.bar_chart(traffic_group)
@@ -45,3 +56,4 @@ weather_group = df.groupby("Weatherconditions")["Time_taken(min)"].mean()
 st.bar_chart(weather_group)
 
 st.write("📊 Use the sidebar to filter data dynamically!")
+
