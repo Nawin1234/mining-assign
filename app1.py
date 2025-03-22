@@ -3,18 +3,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# File Path (Ensure the file is in the same folder as this script)
-file_path = "delivery_data.csv"  
-
 # Load dataset
 @st.cache_data
 def load_data():
+    file_path = "delivery_data.csv"  # Ensure this file is uploaded in GitHub
+
     try:
         df = pd.read_csv(file_path)
-        df["Time_taken(min)"] = df["Time_taken(min)"].str.extract("(\d+)").astype(float)  # Clean data
+        df["Time_taken(min)"] = df["Time_taken(min)"].str.extract("(\d+)").astype(float)  # Clean time column
         return df
     except FileNotFoundError:
-        st.error("⚠️ File not found! Please make sure 'delivery_data.csv' is in the same folder as this script.")
+        st.error("⚠️ File not found! Please upload 'delivery_data.csv' to your GitHub repository.")
         return None
 
 df = load_data()
@@ -56,4 +55,5 @@ weather_group = df.groupby("Weatherconditions")["Time_taken(min)"].mean()
 st.bar_chart(weather_group)
 
 st.write("📊 Use the sidebar to filter data dynamically!")
+
 
