@@ -9,7 +9,7 @@ st.set_page_config(page_title="Delivery Data Analysis", page_icon="🚚")
 # Function to load dataset
 @st.cache_data
 def load_data():
-    file_path = "delivery_data.csv"  # Make sure this is in the same folder as app.py
+    file_path = "amazon.csv"  # Make sure this is in the same folder as app.py
 
     try:
         df = pd.read_csv(file_path)
