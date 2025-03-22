@@ -3,17 +3,20 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Load dataset
+# Set page title and icon
+st.set_page_config(page_title="Delivery Data Analysis", page_icon="🚚")
+
+# Function to load dataset
 @st.cache_data
 def load_data():
-    file_path = "delivery_data.csv"  # Ensure this file is uploaded in GitHub
+    file_path = "delivery_data.csv"  # Make sure this is in the same folder as app.py
 
     try:
         df = pd.read_csv(file_path)
-        df["Time_taken(min)"] = df["Time_taken(min)"].str.extract("(\d+)").astype(float)  # Clean time column
+        df["Time_taken(min)"] = df["Time_taken(min)"].str.extract("(\d+)").astype(float)  # Clean data
         return df
     except FileNotFoundError:
-        st.error("⚠️ File not found! Please upload 'delivery_data.csv' to your GitHub repository.")
+        st.error("⚠️ File not found! Please check if 'delivery_data.csv' is in the same folder as app.py.")
         return None
 
 df = load_data()
@@ -22,43 +25,30 @@ df = load_data()
 if df is None:
     st.stop()
 
-# Set page title and icon
-st.set_page_config(page_title="Delivery Data Analysis", page_icon="🚚")
-
-# Sidebar for user input
+# Sidebar Filters
 st.sidebar.title("Filter Delivery Data")
-
-# Filter for order date
 selected_date = st.sidebar.selectbox("Select Order Date", options=df["Order_Date"].unique())
-
-# Slider for minimum delivery time
 min_delivery_time = st.sidebar.slider("Minimum Delivery Time (mins)", 
                                       min_value=int(df["Time_taken(min)"].min()), 
                                       max_value=int(df["Time_taken(min)"].max()), 
                                       value=int(df["Time_taken(min)"].median()))
-
-# Multi-select for traffic density
 selected_traffic = st.sidebar.multiselect("Select Traffic Density", 
                                           options=df["Road_traffic_density"].unique(), 
                                           default=df["Road_traffic_density"].unique())
+num_records = st.sidebar.slider("Number of Records to Display", min_value=1, max_value=50, value=10)
 
-# Filter data based on user input
+# Filter Data
 filtered_data = df[(df["Order_Date"] == selected_date) & 
                    (df["Time_taken(min)"] >= min_delivery_time) & 
                    (df["Road_traffic_density"].isin(selected_traffic))]
-
-# Limit number of records displayed
-num_records = st.sidebar.slider("Number of Records to Display", min_value=1, max_value=50, value=10)
 filtered_data = filtered_data.head(num_records)
 
-# Main title
+# Display Filtered Data
 st.title("🚚 Delivery Data Analysis App")
-
-# Display filtered results
 st.write(f"**Filtered Results for Date {selected_date} with Min Delivery Time {min_delivery_time} mins:**")
 st.dataframe(filtered_data)
 
-# Create tabs for different visualizations
+# Create Tabs for Visualization
 tabs = st.tabs(["Delivery Time Distribution", "Traffic Impact on Delivery"])
 
 with tabs[0]:
@@ -82,6 +72,7 @@ with tabs[1]:
 
 # Footer
 st.write("🚀 Analyzing delivery data made easy!")
+
 
 
 
