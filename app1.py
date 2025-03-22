@@ -2,22 +2,37 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 # Set page title and icon
-st.set_page_config(page_title="Delivery Data Analysis", page_icon="🚚")
+st.set_page_config(page_title="🚚 Delivery Data Analysis", page_icon="📦")
 
 # Function to load dataset
 @st.cache_data
 def load_data():
-    file_path = "amazon.csv"  # Make sure this is in the same folder as app.py
+    file_path = "delivery_data.csv"  # Ensure this file is uploaded to GitHub
 
-    try:
-        df = pd.read_csv(file_path)
-        df["Time_taken(min)"] = df["Time_taken(min)"].str.extract("(\d+)").astype(float)  # Clean data
-        return df
-    except FileNotFoundError:
-        st.error("⚠️ File not found! Please check if 'delivery_data.csv' is in the same folder as app.py.")
+    # Check if file exists
+    if not os.path.exists(file_path):
+        st.error("⚠️ File not found! Please upload 'delivery_data.csv' to the same folder as app.py.")
         return None
+
+    df = pd.read_csv(file_path)
+
+    # Strip spaces and normalize column names
+    df.columns = df.columns.str.strip()
+
+    # Debug: Show available columns
+    st.write("🛠 Available Columns:", df.columns.tolist())
+
+    # Ensure "Time_taken(min)" column exists
+    if "Time_taken(min)" in df.columns:
+        df["Time_taken(min)"] = df["Time_taken(min)"].astype(str).str.extract("(\d+)").astype(float)
+    else:
+        st.error("⚠️ Column 'Time_taken(min)' not found. Please check the dataset.")
+        return None
+
+    return df
 
 df = load_data()
 
@@ -27,20 +42,40 @@ if df is None:
 
 # Sidebar Filters
 st.sidebar.title("Filter Delivery Data")
+
+# Ensure Order_Date column exists
+if "Order_Date" not in df.columns:
+    st.error("⚠️ Column 'Order_Date' not found in dataset. Please check your CSV file.")
+    st.stop()
+
 selected_date = st.sidebar.selectbox("Select Order Date", options=df["Order_Date"].unique())
+
+# Ensure Road_traffic_density column exists
+if "Road_traffic_density" not in df.columns:
+    st.error("⚠️ Column 'Road_traffic_density' not found in dataset. Please check your CSV file.")
+    st.stop()
+
+selected_traffic = st.sidebar.multiselect("Select Traffic Density", 
+                                          options=df["Road_traffic_density"].unique(), 
+                                          default=df["Road_traffic_density"].unique())
+
+# Ensure numerical operations don't fail
+if df["Time_taken(min)"].dtype != float:
+    st.error("⚠️ 'Time_taken(min)' column should be numeric. Please check your dataset.")
+    st.stop()
+
 min_delivery_time = st.sidebar.slider("Minimum Delivery Time (mins)", 
                                       min_value=int(df["Time_taken(min)"].min()), 
                                       max_value=int(df["Time_taken(min)"].max()), 
                                       value=int(df["Time_taken(min)"].median()))
-selected_traffic = st.sidebar.multiselect("Select Traffic Density", 
-                                          options=df["Road_traffic_density"].unique(), 
-                                          default=df["Road_traffic_density"].unique())
+
 num_records = st.sidebar.slider("Number of Records to Display", min_value=1, max_value=50, value=10)
 
 # Filter Data
 filtered_data = df[(df["Order_Date"] == selected_date) & 
                    (df["Time_taken(min)"] >= min_delivery_time) & 
                    (df["Road_traffic_density"].isin(selected_traffic))]
+
 filtered_data = filtered_data.head(num_records)
 
 # Display Filtered Data
@@ -72,6 +107,7 @@ with tabs[1]:
 
 # Footer
 st.write("🚀 Analyzing delivery data made easy!")
+
 
 
 
